@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>农屿 NongYu - 你的专属校园生活助手</title>
+    <link rel="icon" href="imgs/logo.png" type="image/png">
+    <style>
+        /* Canvas Background */
+        #bg-canvas {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            opacity: 0.6;
+        }
+
+        /* Scroll Reveal Animation */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: all 0.8s cubic-bezier(0.5, 0, 0, 1);
+        }
+        
+        .reveal.active {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        :root {
+            /* 配色方案：高级绿 + 辅助黄 */
+            --primary-color: #2E7D32; /* 森林绿，沉稳高级 */
+            --primary-light: #4CAF50;
+            --accent-color: #FBC02D; /* 暖黄，活力点缀 */
+            --bg-color: #F9FAFB;
+            --surface-color: #FFFFFF;
+            --text-primary: #1F2937;
+            --text-secondary: #4B5563;
+            --text-light: #9CA3AF;
+            
+            /* 间距与圆角 */
+            --spacing-xs: 8px;
+            --spacing-sm: 16px;
+            --spacing-md: 24px;
+            --spacing-lg: 48px;
+            --spacing-xl: 96px;
+            --radius-sm: 8px;
+            --radius-md: 16px;
+            --radius-lg: 24px;
+            
+            /* 阴影 - 高级感关键 */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-card: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        a {
+            text-decoration: none;
+            color: inherit;
+            transition: all 0.3s ease;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            border-radius: var(--radius-md);
+        }
+
+        .container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 0 var(--spacing-md);
+        }
+
+        /* --- Header / Navigation --- */
+        header {
+            background-color: rgba(255, 255, 255, 0.9);
+            backdrop-filter: blur(10px);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+            border-bottom: 1px solid rgba(0,0,0,0.05);
+        }
+
+        .nav-container {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            height: 70px;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 800;
+            color: var(--primary-color);
+            letter-spacing: -0.5px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .logo img {
+            height: 40px;
+            width: auto;
+            border-radius: 8px;
+        }
+        
+        .logo span {
+            color: var(--accent-color);
+        }
+
+        .nav-links {
+            display: flex;
+            gap: 32px;
+        }
+
+        .nav-links a {
+            font-weight: 500;
+            color: var(--text-secondary);
+            font-size: 15px;
+        }
+
+        .nav-links a:hover {
+            color: var(--primary-color);
+        }
+
+        .cta-btn {
+            background-color: var(--primary-color);
+            color: white;
+            padding: 10px 24px;
+            border-radius: 30px;
+            font-weight: 600;
+            font-size: 14px;
+            box-shadow: 0 4px 14px rgba(46, 125, 50, 0.3);
+        }
+
+        .cta-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(46, 125, 50, 0.4);
+            background-color: var(--primary-light);
+        }
+
+        /* --- Hero Section --- */
+        .hero {
+            padding: 160px 0 100px;
+            text-align: center;
+            background: linear-gradient(180deg, rgba(46, 125, 50, 0.05) 0%, rgba(255,255,255,0) 100%);
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 800;
+            margin-bottom: 24px;
+            letter-spacing: -1.5px;
+            color: var(--text-primary);
+        }
+        
+        .hero h1 span {
+            background: linear-gradient(120deg, var(--primary-color) 0%, var(--primary-light) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .hero p {
+            font-size: 20px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .hero-images {
+            margin-top: 60px;
+            display: flex;
+            justify-content: center;
+            gap: 24px;
+            perspective: 1000px;
+        }
+
+        .hero-phone {
+            width: 280px;
+            box-shadow: var(--shadow-card);
+            border-radius: 40px; 
+            overflow: hidden;
+            transform: rotateY(0deg) translateY(0);
+            transition: transform 0.5s ease;
+            margin: 0 auto;
+        }
+        
+        .hero-phone:hover {
+            transform: translateY(-10px);
+        }
+        
+        .hero-phone img {
+            border-radius: 32px;
+            width: 100%;
+            display: block;
+        }
+
+        /* --- Section Styling --- */
+        .section {
+            padding: 100px 0;
+        }
+
+        .section-header {
+            text-align: center;
+            margin-bottom: 64px;
+        }
+
+        .section-tag {
+            display: inline-block;
+            padding: 6px 16px;
+            background-color: rgba(251, 192, 45, 0.15);
+            color: #F57F17;
+            border-radius: 20px;
+            font-size: 13px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+        }
+
+        .section-title {
+            font-size: 40px;
+            font-weight: 700;
+            margin-bottom: 16px;
+            letter-spacing: -1px;
+        }
+
+        .section-desc {
+            font-size: 18px;
+            color: var(--text-secondary);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* --- Feature Grids --- */
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+            align-items: start;
+        }
+
+        .feature-card {
+            background: var(--surface-color);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            box-shadow: var(--shadow-md);
+            transition: all 0.3s ease;
+            border: 1px solid rgba(0,0,0,0.03);
+            text-align: center;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-8px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .feature-icon {
+            width: 64px;
+            height: 64px;
+            background-color: rgba(46, 125, 50, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 24px;
+            color: var(--primary-color);
+            font-size: 24px;
+        }
+
+        .feature-title {
+            font-size: 20px;
+            font-weight: 700;
+            margin-bottom: 12px;
+        }
+
+        .feature-text {
+            color: var(--text-secondary);
+            font-size: 15px;
+            margin-bottom: 24px;
+        }
+        
+        .phone-frame {
+            border-radius: 20px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            margin: 0 auto;
+            max-width: 100%;
+        }
+
+        /* --- Specific Sections --- */
+        
+        /* Theme Section */
+        .theme-showcase {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-bottom: 24px;
+        }
+        
+        .theme-note {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 14px;
+            margin-top: 24px;
+            font-style: italic;
+        }
+
+        @media (max-width: 768px) {
+            .theme-showcase {
+                grid-template-columns: 1fr;
+            }
+        }
+        
+        .theme-item {
+            text-align: center;
+            transition: transform 0.3s ease;
+        }
+        
+        .theme-item:hover {
+            transform: translateY(-5px);
+        }
+        
+        .theme-item p {
+            margin-top: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        /* Info Block */
+        .info-block {
+            background-color: white;
+            border-radius: var(--radius-lg);
+            padding: 40px;
+            margin-bottom: 32px;
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--primary-color);
+        }
+
+        .info-block h3 {
+            font-size: 22px;
+            margin-bottom: 16px;
+            color: var(--text-primary);
+        }
+
+        .info-block p {
+            color: var(--text-secondary);
+            line-height: 1.8;
+        }
+
+        /* --- Footer --- */
+        footer {
+            background-color: #1F2937;
+            color: white;
+            padding: 80px 0 40px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 48px;
+            margin-bottom: 64px;
+        }
+
+        .footer-col h4 {
+            font-size: 18px;
+            margin-bottom: 24px;
+            color: white;
+        }
+
+        .footer-col ul {
+            list-style: none;
+        }
+
+        .footer-col li {
+            margin-bottom: 12px;
+        }
+
+        .footer-col a {
+            color: #9CA3AF;
+        }
+
+        .footer-col a:hover {
+            color: white;
+        }
+
+        .footer-bottom {
+            text-align: center;
+            padding-top: 40px;
+            border-top: 1px solid rgba(255,255,255,0.1);
+            color: #6B7280;
+            font-size: 14px;
+        }
+
+        /* --- Responsive --- */
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 36px;
+            }
+            
+            .nav-links {
+                display: none; /* Mobile menu needed but keeping simple for now */
+            }
+            
+            .hero-images {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .hero-phone {
+                width: 240px;
+                margin-bottom: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <canvas id="bg-canvas"></canvas>
+
+    <!-- Navigation -->
+    <header>
+        <div class="container nav-container">
+            <a href="#" class="logo">
+                <img src="imgs/logo.png" alt="农屿 Logo">
+                <div>农屿</div>
+            </a>
+            <nav class="nav-links">
+                <a href="#themes">主题美化</a>
+                <a href="#jiaowu">教务功能</a>
+                <a href="#second-class">二课活动</a>
+                <a href="#widgets">桌面组件</a>
+                <a href="#about">关于我们</a>
+            </nav>
+            <a href="#" class="cta-btn">立即下载</a>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>让校园生活<br><span>更简单，更优雅</span></h1>
+            <p>农屿 App，专为川农学子打造的一站式校园生活助手。颜值与实力并存。</p>
+            <a href="#" class="cta-btn" style="padding: 16px 48px; font-size: 18px;">免费下载 App</a>
+            
+            <div class="hero-images">
+                <!-- Using Theme Images for Hero -->
+                <div class="hero-phone" style="transform: rotateY(-15deg) translateZ(-50px);">
+                    <img src="imgs/themeshowdark.jpg" alt="Dark Theme">
+                </div>
+                <div class="hero-phone" style="z-index: 10; transform: scale(1.1);">
+                    <img src="imgs/themeshowgreen.jpg" alt="Green Theme">
+                </div>
+                <div class="hero-phone" style="transform: rotateY(15deg) translateZ(-50px);">
+                    <img src="imgs/themeshowpink.jpg" alt="Pink Theme">
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Themes Section -->
+    <section id="themes" class="section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">个性化体验</span>
+                <h2 class="section-title">多种主题，随心切换</h2>
+                <p class="section-desc">无论是深邃的暗夜模式，还是清新的绿色、温柔的粉色，农屿都能完美适配你的心情。</p>
+            </div>
+            <div class="theme-showcase">
+                <div class="theme-item">
+                    <div class="phone-frame">
+                        <img src="imgs/themeshowdark.jpg" alt="暗夜模式">
+                    </div>
+                    <p>暗夜深黑</p>
+                </div>
+                <div class="theme-item">
+                    <div class="phone-frame">
+                        <img src="imgs/themeshowgreen.jpg" alt="川农新绿">
+                    </div>
+                    <p>川农新绿（默认）</p>
+                </div>
+                <div class="theme-item">
+                    <div class="phone-frame">
+                        <img src="imgs/themeshowpink.jpg" alt="少女粉嫩">
+                    </div>
+                    <p>樱花浅粉</p>
+                </div>
+            </div>
+            <p class="theme-note">更多主题可联系农屿开发者，联系方式见网页底部</p>
+        </div>
+    </section>
+
+    <!-- Jiaowu Section -->
+    <section id="jiaowu" class="section" style="background-color: white;">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">教务助手</span>
+                <h2 class="section-title">学业信息，一手掌握</h2>
+                <p class="section-desc">不再错过任何一条重要通知，课程表、考试安排、成绩查询，一触即达。</p>
+            </div>
+
+            <div class="feature-grid">
+                <!-- Notices & Stats -->
+                <div class="feature-card">
+                    <h3 class="feature-title">教务通知</h3>
+                    <p class="feature-text">第一时间获取学校最新教务动态。</p>
+                    <div class="phone-frame">
+                        <img src="imgs/jiaowuNotice.jpg" alt="教务通知">
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h3 class="feature-title">学业统计</h3>
+                    <p class="feature-text">清晰直观的学分与绩点统计。</p>
+                    <div class="phone-frame">
+                        <img src="imgs/jiaowuProgress.jpg" alt="学业统计">
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h3 class="feature-title">成绩查询</h3>
+                    <p class="feature-text">快速查询各科成绩与排名。</p>
+                    <div class="phone-frame">
+                        <img src="imgs/jiaowuScore.jpg" alt="成绩查询">
+                    </div>
+                </div>
+                 <div class="feature-card">
+                    <h3 class="feature-title">竞赛通知</h3>
+                    <p class="feature-text">各类学科竞赛信息汇总。</p>
+                    <div class="phone-frame">
+                        <img src="imgs/jiaowuCompetition.jpg" alt="竞赛通知">
+                    </div>
+                </div>
+            </div>
+            
+            <div class="feature-grid" style="margin-top: 60px;">
+                 <!-- Course & Exam -->
+                 <div class="feature-card">
+                    <h3 class="feature-title">课程表</h3>
+                    <p class="feature-text">支持自定义背景，每日课程一目了然。</p>
+                    <div class="phone-frame">
+                        <img src="imgs/jiaowuCourse.jpg" alt="课程表">
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h3 class="feature-title">考试安排</h3>
+                    <p class="feature-text">考试时间地点倒计时，助你从容应考。</p>
+                    <div class="phone-frame">
+                        <img src="imgs/jiaowuExam.jpg" alt="考试安排">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Second Class Section -->
+    <section id="second-class" class="section">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">第二课堂</span>
+                <h2 class="section-title">丰富活动，精彩校园</h2>
+                <p class="section-desc">二课活动报名、签到、成绩查询，从未如此便捷。</p>
+            </div>
+            <div class="feature-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="feature-card">
+                    <h3 class="feature-title">活动报名</h3>
+                    <p class="feature-text">浏览并报名感兴趣的校园活动。</p>
+                    <div class="phone-frame">
+                        <img src="imgs/secondActivity.jpg" alt="二课活动">
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h3 class="feature-title">二课成绩</h3>
+                    <p class="feature-text">实时查看二课分数与活动记录。</p>
+                    <div class="phone-frame">
+                        <img src="imgs/secondScore.jpg" alt="二课成绩">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Widgets Section -->
+    <section id="widgets" class="section" style="background-color: white;">
+        <div class="container">
+            <div class="section-header">
+                <span class="section-tag">桌面组件</span>
+                <h2 class="section-title">重要信息，抬手即见</h2>
+                <p class="section-desc">精美的桌面小组件，无需打开 App 即可查看课程与考试信息。</p>
+            </div>
+            <div class="feature-grid" style="grid-template-columns: repeat(2, 1fr);">
+                <div class="feature-card">
+                    <h3 class="feature-title">课程表小组件</h3>
+                    <p class="feature-text">今日课程，桌面直达。</p>
+                    <div class="phone-frame">
+                        <img src="imgs/widget1.jpg" alt="课程组件">
+                    </div>
+                </div>
+                <div class="feature-card">
+                    <h3 class="feature-title">信息展示小组件</h3>
+                    <p class="feature-text">考试倒计时与重要通知。</p>
+                    <div class="phone-frame">
+                        <img src="imgs/widget2.jpg" alt="信息组件">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="section" style="background-color: var(--primary-color); color: white;">
+        <div class="container">
+            <div class="section-header" style="color: white;">
+                <span class="section-tag" style="background-color: rgba(255,255,255,0.2); color: var(--accent-color);">关于我们</span>
+                <h2 class="section-title" style="color: white;">农屿的故事</h2>
+                <p class="section-desc" style="color: rgba(255,255,255,0.8);">一群热爱技术的川农人，为更好的校园生活而努力。</p>
+            </div>
+
+            <div class="info-block" style="color: var(--text-primary);">
+                <h3>App 开发背景</h3>
+                <p>[占位符] 农屿 App 的诞生源于我们对校园生活痛点的深刻洞察。在日常学习生活中，我们发现教务信息的获取渠道分散，操作繁琐。为了解决这些问题，我们决定开发一款集教务管理、二课活动、生活服务于一体的综合性校园助手。</p>
+            </div>
+
+            <div class="info-block" style="color: var(--text-primary);">
+                <h3>开发团队介绍</h3>
+                <p>[占位符] 我们的团队由来自信息工程学院的一群充满激情和创造力的学生组成。虽然我们来自不同的年级和专业，但我们都有着共同的目标：用技术改变生活。团队成员分工明确，涵盖了产品设计、前端开发、后端架构、UI设计等多个领域。</p>
+            </div>
+
+            <div class="info-block" style="color: var(--text-primary);">
+                <h3>历史节点回顾</h3>
+                <p>[占位符] <br>
+                2023年9月：项目立项，确定核心功能。<br>
+                2023年12月：发布 1.0 Alpha 版本，邀请内测。<br>
+                2024年3月：正式版上线，首周用户突破 5000 人。<br>
+                2024年9月：推出全新 2.0 版本，UI 全面升级。</p>
+            </div>
+
+            <div class="info-block" style="color: var(--text-primary);">
+                <h3>App 理念介绍</h3>
+                <p>[占位符] “农屿”寓意着“农大人的岛屿”。我们希望这里不仅是一个工具，更是一个温暖的社区，一个属于每一位川农学子的精神角落。我们坚持“简约、高效、美观”的设计理念，致力于为用户提供最极致的使用体验。</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-col">
+                    <div class="logo" style="color: white; margin-bottom: 0;">
+                        <img src="imgs/logo.png" alt="农屿 Logo" style="height: 32px;">
+                        <div>农屿 <span>NongYu</span></div>
+                    </div>
+                    <p style="color: #9CA3AF; margin-top: 16px;">让校园生活更简单。</p>
+                </div>
+                <div class="footer-col">
+                    <h4>功能导航</h4>
+                    <ul>
+                        <li><a href="#themes">主题美化</a></li>
+                        <li><a href="#jiaowu">教务功能</a></li>
+                        <li><a href="#second-class">二课活动</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>联系我们</h4>
+                    <ul>
+                        <li><a href="#">官方 QQ 群: 123456789</a></li>
+                        <li><a href="#">开发者邮箱: dev@nongyu.com</a></li>
+                        <li><a href="#">加入我们</a></li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>下载</h4>
+                    <ul>
+                        <li><a href="#">iOS App Store</a></li>
+                        <li><a href="#">Android 下载</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2026 农屿开发团队. All rights reserved.</p>
+                <p style="margin-top: 8px; font-size: 12px; color: #6B7280; opacity: 0.8;">app效果展示图为豆包AI辅助生成，以实际效果为准</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // --- Canvas Background Animation: 金桂飘香 ---
+        const canvas = document.getElementById('bg-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        let width, height;
+        let flowers = [];
+        
+        // Configuration
+        const flowerCount = 50; // 花朵数量
+        // 桂花配色：金黄、橙黄、淡黄
+        const colors = [
+            '255, 215, 0',   // Gold
+            '255, 165, 0',   // Orange
+            '255, 223, 0',   // Golden Yellow
+            '250, 250, 210'  // Light Goldenrod Yellow
+        ];
+        
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        }
+        
+        class Flower {
+            constructor() {
+                this.init(true);
+            }
+
+            init(randomY = false) {
+                this.x = Math.random() * width;
+                this.y = randomY ? Math.random() * height : -10;
+                // 下落速度
+                this.speedY = Math.random() * 1.5 + 0.5; 
+                // 横向漂移
+                this.speedX = (Math.random() - 0.5) * 0.8;
+                // 大小 (桂花很小)
+                this.size = Math.random() * 3 + 2;
+                this.color = colors[Math.floor(Math.random() * colors.length)];
+                this.alpha = Math.random() * 0.6 + 0.2;
+                // 摇摆相位
+                this.swing = Math.random() * Math.PI * 2;
+                this.swingSpeed = Math.random() * 0.05 + 0.01;
+            }
+            
+            update() {
+                this.y += this.speedY;
+                this.swing += this.swingSpeed;
+                this.x += Math.sin(this.swing) * 0.5 + this.speedX;
+                
+                // 如果飘出屏幕底部或侧边，重置到顶部
+                if (this.y > height + 10 || this.x < -10 || this.x > width + 10) {
+                    this.init();
+                }
+            }
+            
+            draw() {
+                ctx.beginPath();
+                // 绘制简单的四瓣花朵形状模拟桂花，或者直接用柔和的圆形
+                // 这里用圆形模拟簇状的小桂花，效果更轻盈
+                ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(${this.color}, ${this.alpha})`;
+                ctx.fill();
+            }
+        }
+        
+        function initFlowers() {
+            flowers = [];
+            for (let i = 0; i < flowerCount; i++) {
+                flowers.push(new Flower());
+            }
+        }
+        
+        function animate() {
+            ctx.clearRect(0, 0, width, height);
+            
+            flowers.forEach(flower => {
+                flower.update();
+                flower.draw();
+            });
+            
+            requestAnimationFrame(animate);
+        }
+        
+        window.addEventListener('resize', () => {
+            resize();
+            // 不重置花朵位置，只更新画布大小，避免闪烁
+        });
+        
+        resize();
+        initFlowers();
+        animate();
+
+        // --- Scroll Reveal Animation ---
+        document.addEventListener('DOMContentLoaded', () => {
+            const reveals = document.querySelectorAll('.section-header, .feature-card, .info-block, .theme-item, .hero-phone');
+            
+            // Add reveal class to elements
+            reveals.forEach(el => el.classList.add('reveal'));
+            
+            const revealOnScroll = () => {
+                const windowHeight = window.innerHeight;
+                const elementVisible = 100;
+                
+                reveals.forEach(reveal => {
+                    const elementTop = reveal.getBoundingClientRect().top;
+                    if (elementTop < windowHeight - elementVisible) {
+                        reveal.classList.add('active');
+                    }
+                });
+            };
+            
+            window.addEventListener('scroll', revealOnScroll);
+            // Trigger once on load
+            revealOnScroll();
+        });
+    </script>
+</body>
+</html>
